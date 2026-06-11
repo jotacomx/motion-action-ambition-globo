@@ -1,0 +1,61 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Cormorant", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Paleta extraída de mongols.peachworlds.com */
+  --color-void: #06040a; /* fundo quase preto */
+  --color-cream: #fff2df; /* texto principal */
+  --color-ember: #ff6400; /* destaque laranja (rim light) */
+  --color-azure: #4b71f7; /* acento azul */
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #06040a;
+  color: #fff2df;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Esconde scrollbar (igual ao site original) mantendo a rolagem */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Capitular decorativa estilo "morris initials" do original */
+.dropcap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  line-height: 0.8;
+  float: left;
+  padding: 0.15em 0.12em 0 0;
+  color: var(--color-ember);
+  font-weight: 500;
+}

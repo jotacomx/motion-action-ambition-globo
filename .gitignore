@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vscode
+npm-debug.log*
+
+# imagem usada só no teste de troca do objeto central
+public/teste.jpeg
