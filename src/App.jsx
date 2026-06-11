@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Float } from "@react-three/drei";
 import { motion, AnimatePresence } from "motion/react";
 import Lenis from "lenis";
-import { Volume2, VolumeX, ArrowDown, RotateCw } from "lucide-react";
+import { Volume2, VolumeX, ArrowDown, RotateCw, MessageCircle } from "lucide-react";
 import * as THREE from "three";
 
 /* ============================================================================
@@ -238,16 +238,6 @@ function Hero() {
       id="hero"
       className="relative flex h-screen flex-col items-center justify-center px-6 text-center"
     >
-      <motion.p
-        initial={{ opacity: 0, letterSpacing: "0.6em" }}
-        whileInView={{ opacity: 0.85, letterSpacing: "0.45em" }}
-        viewport={{ amount: 0.6 }}
-        transition={{ duration: 1.2, ease: EASE }}
-        className="mb-6 font-sans text-[11px] uppercase tracking-[0.45em] text-cream/70 md:text-sm"
-      >
-        Immersive <span className="italic font-display lowercase tracking-normal text-base md:text-lg">Experience</span>
-      </motion.p>
-
       <motion.h1
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -267,7 +257,7 @@ function Hero() {
         transition={{ duration: 1, ease: EASE, delay: 0.2 }}
         className="mt-4 font-display text-lg italic text-cream/80 md:text-2xl"
       >
-        Mongol Invasion of Europe — 1241-42
+        Gestão de Performance
       </motion.p>
 
       <motion.div
@@ -356,16 +346,29 @@ function Outro() {
         transition={{ duration: 1.2, ease: EASE }}
       >
         <p className="mb-3 font-sans text-xs uppercase tracking-[0.35em] text-ember">
-          End of Exhibition
+          Vamos crescer juntos
         </p>
-        <h2 className="font-display text-6xl font-medium text-cream md:text-8xl">Sübütai</h2>
-        <p className="mt-4 max-w-md font-display text-lg italic text-cream/70">
-          "The empire was won on horseback — and halted only by the death of a Khan."
+        <h2 className="font-display text-6xl font-medium text-cream md:text-8xl">AMBITION</h2>
+        <p className="mx-auto mt-5 max-w-xl font-display text-xl italic text-cream/75 md:text-2xl">
+          Tecnologia, inteligência e melhoria contínua para elevar a performance
+          da sua empresa.
         </p>
       </motion.div>
-      <p className="mt-8 font-sans text-[11px] uppercase tracking-[0.3em] text-cream/40">
-        Rebuilt with React-Three-Fiber · placeholder model
-      </p>
+
+      <motion.a
+        href="https://wa.me/5511987654321?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20a%20Ambition."
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Entrar em contato pelo WhatsApp"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ amount: 0.6 }}
+        transition={{ duration: 0.9, ease: EASE, delay: 0.25 }}
+        className="mt-8 inline-flex items-center gap-3 rounded-full bg-ember px-9 py-4 font-sans text-sm font-semibold uppercase tracking-[0.18em] text-void transition-all duration-300 hover:scale-105 hover:shadow-[0_0_35px_rgba(255,100,0,0.45)]"
+      >
+        <MessageCircle size={18} />
+        Entrar em contato
+      </motion.a>
     </section>
   );
 }
