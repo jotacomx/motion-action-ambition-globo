@@ -15,44 +15,44 @@ import * as THREE from "three";
 
 const EASE = [0.16, 1, 0.3, 1]; // cubic-bezier padrão de fluidez (toda a página)
 
-// Conteúdo narrativo: 7 seções-âncora, como o original (anchor1b..anchor7b)
+// Conteúdo narrativo da Ambition — parceiro de crescimento (hero + 6 painéis).
 const SECTIONS = [
-  { id: "hero", kicker: "Immersive Experience" },
+  { id: "hero", kicker: "Performance & Vendas" },
   {
-    id: "origin",
-    kicker: "I — The Storm Gathers",
-    title: "Sons of the Eternal Sky",
-    body: "By 1241 the Mongol Empire stretched from the Pacific to the Caspian. Under the banner of Batu Khan and the strategist Subutai, a tumen of horse-archers turned west — toward a Europe that had never seen war move at the speed of a galloping steppe pony.",
+    id: "quem-somos",
+    kicker: "Quem Somos",
+    title: "Parceiro de Crescimento",
+    body: "A Ambition une consultoria, marketing e implementação comercial para fazer negócios crescerem de forma estruturada e previsível. Mais do que gerar leads, construímos toda a jornada — da atração à conversão — transformando empresas que dependem do improviso em operações prontas para escalar.",
   },
   {
-    id: "legnica",
-    kicker: "II — 9 April 1241",
-    title: "The Field of Legnica",
-    body: "In Silesia, Duke Henry II of Poland gathered knights, Templars and miners. The Mongols feigned flight, drew the heavy cavalry apart, then closed the trap with smoke and arrows. The flower of Polish and German chivalry fell in a single afternoon.",
+    id: "performance",
+    kicker: "01 — Marketing de Performance",
+    title: "Demanda Qualificada",
+    body: "Planejamento, execução e otimização contínua de campanhas em Meta e Google Ads. Estratégias de aquisição, remarketing e escala que geram não apenas alcance, mas demanda real e pronta para o seu time vender.",
   },
   {
-    id: "mohi",
-    kicker: "III — 11 April 1241",
-    title: "Disaster at Mohi",
-    body: "Two days later and four hundred miles south, King Béla IV of Hungary was encircled at the Sajó River. A night crossing and a bridge stormed by catapults shattered his camp. Hungary lost a generation of its army between dawn and noon.",
+    id: "comercial",
+    kicker: "02 — Estrutura Comercial",
+    title: "Vendas sob Controle",
+    body: "Organizamos o processo comercial para aumentar a conversão e reduzir perdas ao longo do funil: CRM implementado, pipelines, scripts de atendimento, follow-up e indicadores claros. Cada oportunidade acompanhada do primeiro contato ao fechamento.",
   },
   {
-    id: "tactics",
-    kicker: "IV — The Art of the Horde",
-    title: "War as a Discipline",
-    body: "Their advantage was not numbers but system: the feigned retreat, the arrow-storm, the lacquered composite bow, and a courier network that let Subutai coordinate armies separated by a week's ride as if they shared a single mind.",
+    id: "ia-automacoes",
+    kicker: "03 — Inteligência Artificial",
+    title: "Automação e Agentes de IA",
+    body: "Agentes de IA no atendimento, automação de WhatsApp e fluxos com n8n integrando seus sistemas. Qualificação automática de leads e recuperação de oportunidades, em um atendimento híbrido entre inteligência artificial e equipe humana — menos operacional, mais produtividade.",
   },
   {
-    id: "withdrawal",
-    kicker: "V — December 1241",
-    title: "The Sudden Silence",
-    body: "With the Danube frozen and Vienna within reach, news arrived from Karakorum: the Great Khan Ögedei was dead. By Mongol law the princes turned east to elect a successor. Europe was saved not by its walls, but by a death two thousand miles away.",
+    id: "conversao",
+    kicker: "04 — Ativos de Conversão",
+    title: "Páginas que Convertem",
+    body: "Landing pages de alta conversão, sites institucionais e páginas de pré-venda com copywriting estratégico e desenvolvimento orientado a performance. Estruturas digitais integradas ao CRM e às automações, feitas para transformar visitantes em clientes.",
   },
   {
-    id: "legacy",
-    kicker: "VI — Aftermath",
-    title: "The Shadow They Left",
-    body: "The horde never returned in force, yet the memory reshaped a continent — its fortifications, its diplomacy, its imagination. An empire that conquered everything it touched, halted only by its own succession.",
+    id: "consultoria",
+    kicker: "05 — Consultoria Estratégica",
+    title: "Mapa de Crescimento",
+    body: "Diagnóstico, planejamento, implementação e otimização contínua: analisamos o cenário atual e construímos um plano de crescimento claro e executável. Visão integrada entre marketing e vendas, orientada por dados, com a Ambition lado a lado como parceira estratégica.",
   },
 ];
 
@@ -350,8 +350,7 @@ function Outro() {
         </p>
         <h2 className="font-display text-6xl font-medium text-cream md:text-8xl">AMBITION</h2>
         <p className="mx-auto mt-5 max-w-xl font-display text-xl italic text-cream/75 md:text-2xl">
-          Tecnologia, inteligência e melhoria contínua para elevar a performance
-          da sua empresa.
+          Vamos construir o próximo estágio de crescimento da sua empresa.
         </p>
       </motion.div>
 
@@ -488,7 +487,7 @@ function LoadingVeil() {
             <RotateCw size={26} />
           </motion.div>
           <p className="mt-6 font-display text-xl italic text-cream/80">
-            Summoning the Horde…
+            Inteligência e escala, carregando…
           </p>
         </motion.div>
       )}
