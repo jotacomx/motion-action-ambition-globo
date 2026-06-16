@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Volume2, VolumeX, ArrowDown, RotateCw, MessageCircle } from "lucide-react";
+import { Volume2, VolumeX, ArrowDown, RotateCw, MessageCircle, ChevronRight, X } from "lucide-react";
 import * as THREE from "three";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -60,6 +60,53 @@ const SECTIONS = [
     body: "Diagnóstico, planejamento, implementação e otimização contínua: analisamos o cenário atual e construímos um plano de crescimento claro e executável. Visão integrada entre marketing e vendas, orientada por dados, com a Ambition lado a lado como parceira estratégica. Definimos metas, prioridades e indicadores de acompanhamento, revisamos os resultados periodicamente e ajustamos a rota sempre que o mercado pedir — para que cada decisão seja sustentada por números, e não por achismo.",
   },
 ];
+
+// Conteúdo aprofundado de cada seção (abre no card "Saiba mais"). img = seed da
+// imagem (Unsplash grayscale); more = parágrafos extras.
+const DETAILS = {
+  "quem-somos": {
+    img: "ambition-quem-somos",
+    more: [
+      "A Ambition nasceu para resolver um problema comum: empresas que investem em marketing mas não veem o retorno virar venda. Unimos estratégia, tecnologia e execução em um único processo, eliminando o improviso.",
+      "Atuamos como uma extensão do seu time — do planejamento à implementação — alinhando marketing e comercial em torno de metas claras e indicadores que mostram, em números, o crescimento acontecendo.",
+    ],
+  },
+  performance: {
+    img: "ambition-performance",
+    more: [
+      "Construímos máquinas de aquisição em Meta e Google Ads: estrutura de campanhas, públicos, criativos e páginas testadas continuamente para reduzir o custo por lead e elevar a qualidade.",
+      "Cada real é acompanhado por CPL, CPA e ROAS. Otimizamos em tempo real, cortamos o que não performa e escalamos o que gera demanda pronta para o seu time vender.",
+    ],
+  },
+  comercial: {
+    img: "ambition-comercial",
+    more: [
+      "Organizamos o funil comercial de ponta a ponta: CRM implementado, pipelines, cadências de follow-up, scripts e indicadores. Nenhuma oportunidade se perde por falta de processo.",
+      "Treinamos o time e criamos painéis de gestão que revelam os gargalos e mostram onde agir para aumentar a conversão — do primeiro contato ao fechamento.",
+    ],
+  },
+  "ia-automacoes": {
+    img: "ambition-ia",
+    more: [
+      "Implementamos agentes de IA e automações com n8n integrando WhatsApp, CRM e seus sistemas. Qualificação automática, respostas em segundos e recuperação de contatos parados, 24 horas por dia.",
+      "O atendimento fica híbrido: a IA cuida da triagem e do operacional; o time humano foca no que exige sensibilidade e fechamento. Menos custo, mais produtividade.",
+    ],
+  },
+  conversao: {
+    img: "ambition-conversao",
+    more: [
+      "Criamos landing pages, sites e páginas de pré-venda com copy estratégico e desenvolvimento orientado a performance — rápidas, responsivas e integradas ao CRM e às automações.",
+      "Cada página é guiada por dados e testes A/B, com uma jornada pensada para conduzir o visitante, passo a passo, até a ação que importa: comprar, agendar ou falar com vendas.",
+    ],
+  },
+  consultoria: {
+    img: "ambition-consultoria",
+    more: [
+      "Fazemos o diagnóstico do cenário atual e desenhamos um plano de crescimento claro e executável, com metas, prioridades e indicadores de acompanhamento.",
+      "Revisamos os resultados periodicamente e ajustamos a rota conforme o mercado — uma parceria estratégica orientada por dados, lado a lado com a sua operação.",
+    ],
+  },
+};
 
 /* ----------------------------------------------------------------------------
    3D — Câmera dirigida por scroll
@@ -451,7 +498,7 @@ function Hero() {
   );
 }
 
-function Panel({ section, index }) {
+function Panel({ section, index, onReadMore }) {
   const alignRight = index % 2 === 0;
   return (
     <section
@@ -508,9 +555,97 @@ function Panel({ section, index }) {
           <p className="font-sans text-base leading-relaxed text-cream/75 md:text-lg">
             {section.body}
           </p>
+          {DETAILS[section.id] && (
+            <button
+              onClick={() => onReadMore(section)}
+              className={`mt-7 inline-flex items-center gap-2 font-sans text-xs uppercase tracking-[0.28em] text-cream/70 transition-colors hover:text-ember ${
+                alignRight ? "flex-row-reverse" : ""
+              }`}
+            >
+              Saiba mais <ChevronRight size={14} />
+            </button>
+          )}
         </motion.div>
       </motion.div>
     </section>
+  );
+}
+
+/* Card lateral "Saiba mais" — desliza da direita com imagem + texto detalhado. */
+function DetailCard({ section, onClose }) {
+  const d = section ? DETAILS[section.id] : null;
+  return (
+    <AnimatePresence>
+      {section && d && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-[60] flex justify-end bg-void/60 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
+        >
+          <motion.aside
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="relative h-full w-full max-w-md overflow-y-auto border-l border-cream/10 bg-[#0c0910] p-6 md:p-9"
+          >
+            <button
+              onClick={onClose}
+              aria-label="Fechar"
+              className="absolute right-5 top-5 z-10 text-cream/70 transition-colors hover:text-ember"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="relative mt-10 aspect-[16/10] w-full overflow-hidden rounded-xl">
+              <img
+                src={`https://picsum.photos/seed/${d.img}/800/500?grayscale`}
+                alt={section.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(135deg, rgba(200,161,92,0.30), rgba(15,74,66,0.35))",
+                  mixBlendMode: "soft-light",
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0910] via-transparent to-transparent" />
+            </div>
+
+            <span className="mt-7 block font-sans text-xs uppercase tracking-[0.35em] text-ember">
+              {section.kicker}
+            </span>
+            <h3 className="mt-3 font-display text-4xl font-medium leading-[0.95] text-cream">
+              {section.title}
+            </h3>
+
+            <div className="mt-5 space-y-4">
+              {d.more.map((p, i) => (
+                <p key={i} className="font-sans text-sm leading-relaxed text-cream/75">
+                  {p}
+                </p>
+              ))}
+            </div>
+
+            <a
+              href="https://wa.me/5511987654321?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20a%20Ambition."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-ember px-7 py-3.5 font-sans text-sm font-semibold uppercase tracking-[0.16em] text-void transition-all duration-300 hover:scale-105 hover:shadow-[0_0_35px_rgba(200,161,92,0.5)]"
+            >
+              <MessageCircle size={18} />
+              Falar com a Ambition
+            </a>
+          </motion.aside>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -928,6 +1063,7 @@ export default function App() {
   const scrollRef = useRef(0); // progresso global 0..1 lido pela câmera 3D
   const lenis = useRef(null);
   const active = useActiveSection();
+  const [detail, setDetail] = useState(null); // seção aberta no card "Saiba mais"
   // DPR fixo e responsivo: nítido no desktop, leve no celular (retina custa caro)
   const [dpr, setDpr] = useState(1);
   useEffect(() => {
@@ -984,11 +1120,13 @@ export default function App() {
 
         <Hero />
         {SECTIONS.slice(1).map((s, i) => (
-          <Panel key={s.id} section={s} index={i} />
+          <Panel key={s.id} section={s} index={i} onReadMore={setDetail} />
         ))}
         <ParallaxOutro />
         <AutomationSection />
       </div>
+
+      <DetailCard section={detail} onClose={() => setDetail(null)} />
     </div>
   );
 }
