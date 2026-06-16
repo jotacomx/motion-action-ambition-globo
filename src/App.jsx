@@ -1,11 +1,15 @@
-import { useRef, useEffect, useState, useMemo, Suspense } from "react";
+import { useRef, useEffect, useState, useMemo, Suspense, lazy } from "react";
 import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber";
 import { Environment, Lightformer, Float } from "@react-three/drei";
 import SplineLoader from "@splinetool/loader";
 import { motion, AnimatePresence } from "motion/react";
 import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Volume2, VolumeX, ArrowDown, RotateCw, MessageCircle } from "lucide-react";
 import * as THREE from "three";
+
+gsap.registerPlugin(ScrollTrigger);
 
 /* ============================================================================
    THE MONGOLS — reconstrução em React-Three-Fiber de mongols.peachworlds.com
@@ -164,6 +168,133 @@ function Monument() {
   );
 }
 
+/* ----------------------------------------------------------------------------
+   3D — Robô (cena Spline carregada no R3F via @splinetool/loader).
+   Assim a CÂMERA é nossa (dirigida pelo scroll, igual ao globo). O "olhar para
+   o mouse" é reimplementado aqui (rotaciona suavemente em direção ao ponteiro).
+-------------------------------------------------------------------------------*/
+const ROBOT_URL_3D = "https://prod.spline.design/PyzDhpQ9E5f1E3MT/scene.splinecode";
+
+// Lado do texto por seção (ordem dos [data-anchor]): 1 = direita, -1 = esquerda,
+// 0 = centro. hero, 6 painéis, parallax(end), automação.
+const TEXT_SIDE = [0, 1, -1, 1, -1, 1, -1, 0, -1];
+
+function Robot() {
+  const obj = useLoader(SplineLoader, ROBOT_URL_3D);
+  const headRef = useRef(null);
+  const els = useRef([]);
+
+  // coleta as seções para saber qual está na tela e onde está o texto
+  useEffect(() => {
+    els.current = Array.from(document.querySelectorAll("[data-anchor]"));
+  }, []);
+
+  const fitted = useMemo(() => {
+    let box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const s = 4.6 / maxDim;
+    obj.scale.setScalar(s);
+    obj.position.set(-center.x * s, -center.y * s, -center.z * s);
+    obj.updateMatrixWorld(true);
+
+    obj.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = false;
+      o.receiveShadow = false;
+    });
+
+    // bbox em coordenadas do mundo (já escalado/centrado)
+    box = new THREE.Box3().setFromObject(obj);
+    const sz = box.getSize(new THREE.Vector3());
+    const ctr = box.getCenter(new THREE.Vector3());
+
+    // Remove a "plataforma"/chão: mesh plano (fino em Y) e de maior área.
+    const flats = [];
+    obj.traverse((o) => {
+      if (!o.isMesh) return;
+      const b = new THREE.Box3().setFromObject(o);
+      const ms = b.getSize(new THREE.Vector3());
+      if (ms.y < Math.max(ms.x, ms.z) * 0.15) flats.push({ o, foot: ms.x * ms.z });
+    });
+    if (flats.length) {
+      const maxFoot = Math.max(...flats.map((f) => f.foot));
+      flats.forEach((f) => {
+        if (f.foot > maxFoot * 0.4) f.o.visible = false;
+      });
+    }
+
+    // Isola a CABEÇA (porção superior) num pivô no pescoço, para girar só ela.
+    const headThresholdY = box.max.y - sz.y * 0.42; // top ~42% = cabeça
+    const headMeshes = [];
+    obj.traverse((o) => {
+      if (!o.isMesh || !o.visible) return;
+      const b = new THREE.Box3().setFromObject(o);
+      const c = b.getCenter(new THREE.Vector3());
+      if (c.y > headThresholdY) headMeshes.push(o);
+    });
+    if (headMeshes.length) {
+      const pivot = new THREE.Group();
+      pivot.position.set(ctr.x, headThresholdY, ctr.z); // pivô no pescoço
+      obj.add(pivot);
+      obj.updateMatrixWorld(true);
+      headMeshes.forEach((m) => pivot.attach(m)); // attach preserva o transform
+      headRef.current = pivot;
+    }
+    return obj;
+  }, [obj]);
+
+  // Só a cabeça gira: vira para o lado do texto (dir/esq) e inclina de baixo
+  // para cima conforme o texto sobe na tela. Movimento suave e natural
+  // (damping macio + leve balanço de vida + inclinação lateral ao virar).
+  useFrame((state, delta) => {
+    const head = headRef.current;
+    if (!head) return;
+    let yawTarget = 0;
+    let pitchTarget = 0;
+    const list = els.current;
+    if (list && list.length) {
+      const vh = window.innerHeight;
+      let best = -1;
+      let bestDist = Infinity;
+      let bestCenter = vh / 2;
+      list.forEach((el, idx) => {
+        const r = el.getBoundingClientRect();
+        const c = r.top + r.height / 2;
+        const d = Math.abs(c - vh / 2);
+        if (d < bestDist) {
+          bestDist = d;
+          best = idx;
+          bestCenter = c;
+        }
+      });
+      yawTarget = (TEXT_SIDE[best] ?? 0) * 0.6;
+      const vy = bestCenter / vh; // 0 (topo) .. 1 (base)
+      pitchTarget = (vy - 0.5) * 0.8; // texto embaixo → olha p/ baixo; em cima → p/ cima
+    }
+
+    // Balanço sutil para a cabeça nunca ficar 100% estática (respiração/vida).
+    const t = state.clock.elapsedTime;
+    yawTarget += Math.sin(t * 0.5) * 0.04;
+    pitchTarget += Math.sin(t * 0.37 + 1.2) * 0.03;
+
+    // Damping macio (sensação orgânica, sem "estalar").
+    const damp = 1 - Math.exp(-3.2 * delta);
+    head.rotation.y += (yawTarget - head.rotation.y) * damp;
+    head.rotation.x += (pitchTarget - head.rotation.x) * damp;
+    // Leve inclinação lateral acompanhando o giro (natural ao virar a cabeça).
+    const rollTarget = -head.rotation.y * 0.18;
+    head.rotation.z += (rollTarget - head.rotation.z) * damp;
+  });
+
+  return (
+    <Float speed={1} rotationIntensity={0} floatIntensity={0.2}>
+      <primitive object={fitted} position={[0, 0.1, 0]} />
+    </Float>
+  );
+}
+
 /* Textura suave (glint radial) para cada estrela parecer um brilho/flash */
 function makeStarTexture() {
   const s = 64;
@@ -305,6 +436,7 @@ function Hero() {
       </motion.div>
 
       <motion.h1
+        data-gaze
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ amount: 0.6 }}
@@ -362,6 +494,7 @@ function Panel({ section, index }) {
         {/* Texto — largura fixa (max-w-xl, w-full) para que kicker, título e
             parágrafo encostem sempre na barra, independente do tamanho do título. */}
         <motion.div
+          data-gaze
           variants={{ hidden: { opacity: 0, y: 50 }, show: { opacity: 1, y: 0 } }}
           transition={{ duration: 1.1, ease: EASE }}
           className="w-full max-w-xl"
@@ -381,42 +514,132 @@ function Panel({ section, index }) {
   );
 }
 
-function Outro() {
+/* Seção final em PARALLAX (Osmo) — camadas que se movem em velocidades
+   diferentes no scroll (GSAP ScrollTrigger), com AMBITION como camada-título.
+   Usa a instância de Lenis criada no App (ScrollTrigger já sincronizado lá). */
+const PARALLAX_LAYERS = [
+  { layer: "1", yPercent: 70 },
+  { layer: "2", yPercent: 55 },
+  { layer: "3", yPercent: 40 },
+  { layer: "4", yPercent: 10 },
+];
+
+function ParallaxOutro() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const trigger = root.querySelector("[data-parallax-layers]");
+
+    const tl = gsap.timeline({
+      scrollTrigger: { trigger: root, start: "top top", end: "bottom bottom", scrub: 0 },
+    });
+
+    PARALLAX_LAYERS.forEach((o, i) => {
+      tl.to(
+        root.querySelectorAll(`[data-parallax-layer="${o.layer}"]`),
+        { yPercent: o.yPercent, ease: "none" },
+        i === 0 ? undefined : "<"
+      );
+    });
+
+    ScrollTrigger.refresh();
+    return () => {
+      tl.scrollTrigger?.kill();
+      tl.kill();
+    };
+  }, []);
+
+  return (
+    <section ref={ref} data-anchor id="end" className="parallax">
+      <div className="parallax__visuals">
+        <div data-parallax-layers className="parallax__layers">
+          {/* AMBITION com movimento parallax, sobre o globo (canvas ao fundo). */}
+          <div data-parallax-layer="3" className="parallax__layer-title">
+            <h2 data-gaze className="font-display text-[22vw] font-medium leading-none tracking-tight text-cream md:text-[17vw] lg:text-[14rem]">
+              AMBITION
+            </h2>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+   Seção AUTOMAÇÃO & IA — robô 3D (Spline) que segue o mouse na seção inteira.
+   O canvas do robô ocupa toda a seção; o texto fica por cima com
+   pointer-events desativado, então o mouse alcança o robô em qualquer ponto.
+-------------------------------------------------------------------------------*/
+const SplineRobotScene = lazy(() => import("@splinetool/react-spline"));
+const ROBOT_URL = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
+
+function AutomationSection() {
   return (
     <section
       data-anchor
-      id="end"
-      className="relative flex h-screen flex-col items-center justify-center gap-6 px-6 text-center"
+      id="automacao-ia"
+      className="relative h-screen w-full overflow-hidden bg-void"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ amount: 0.6 }}
-        transition={{ duration: 1.2, ease: EASE }}
-      >
-        <p className="mb-3 font-sans text-xs uppercase tracking-[0.35em] text-ember">
-          Vamos crescer juntos
-        </p>
-        <h2 className="font-display text-6xl font-medium text-cream md:text-8xl">AMBITION</h2>
-        <p className="mx-auto mt-5 max-w-xl font-display text-xl italic text-cream/75 md:text-2xl">
-          Vamos construir o próximo estágio de crescimento da sua empresa.
-        </p>
-      </motion.div>
+      {/* Robô 3D ocupando a seção inteira → reage ao mouse em qualquer ponto.
+          Posicionado à direita (círculo 2). */}
+      <div className="absolute inset-0 translate-x-[26%]">
+        <Suspense
+          fallback={
+            <div className="flex h-full w-full items-center justify-center text-cream/40">
+              <RotateCw className="animate-spin" size={26} />
+            </div>
+          }
+        >
+          <SplineRobotScene scene={ROBOT_URL} className="h-full w-full" />
+        </Suspense>
+      </div>
 
-      <motion.a
-        href="https://wa.me/5511987654321?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20a%20Ambition."
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Entrar em contato pelo WhatsApp"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ amount: 0.6 }}
-        transition={{ duration: 0.9, ease: EASE, delay: 0.25 }}
-        className="mt-8 inline-flex items-center gap-3 rounded-full bg-ember px-9 py-4 font-sans text-sm font-semibold uppercase tracking-[0.18em] text-void transition-all duration-300 hover:scale-105 hover:shadow-[0_0_35px_rgba(200,161,92,0.5)]"
-      >
-        <MessageCircle size={18} />
-        Entrar em contato
-      </motion.a>
+      {/* Scrim para legibilidade do texto à esquerda (não bloqueia o mouse). */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-void via-void/70 to-transparent" />
+
+      {/* Conteúdo — encostado à esquerda (círculo 1). pointer-events desativado
+          para o mouse chegar ao robô; apenas o botão reativa o clique. */}
+      <div className="pointer-events-none relative z-10 flex h-full w-full flex-col justify-center pl-8 md:pl-20 lg:pl-28">
+        <motion.div
+          data-gaze
+          initial={{ opacity: 0, x: 180 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ amount: 0.4 }}
+          transition={{ duration: 1.1, ease: EASE }}
+          className="max-w-xl"
+        >
+          <span className="mb-4 block font-sans text-xs uppercase tracking-[0.35em] text-ember">
+            Automação & Inteligência Artificial
+          </span>
+          <h2 className="mb-5 font-display text-5xl font-medium leading-[0.95] text-cream md:text-7xl">
+            Um atendimento que nunca para
+          </h2>
+          <p className="mb-6 max-w-lg font-sans text-base leading-relaxed text-cream/75 md:text-lg">
+            Agentes de IA e automações que respondem, qualificam e acompanham seus
+            leads <span className="text-cream">24 horas por dia, 7 dias por semana</span>.
+            Integramos WhatsApp, CRM e fluxos com n8n para que nenhuma oportunidade
+            esfrie — resposta em segundos, recuperação automática de contatos e o seu
+            time livre para fazer o que importa: fechar negócios.
+          </p>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 font-sans text-xs uppercase tracking-[0.2em] text-cream/55">
+            <span>Resposta em segundos</span>
+            <span>Qualificação automática</span>
+            <span>Disponível 24/7</span>
+          </div>
+
+          <a
+            href="https://wa.me/5511987654321?text=Ol%C3%A1!%20Quero%20um%20atendimento%20automatizado%20com%20IA."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pointer-events-auto mt-8 inline-flex items-center gap-3 rounded-full bg-ember px-9 py-4 font-sans text-sm font-semibold uppercase tracking-[0.18em] text-void transition-all duration-300 hover:scale-105 hover:shadow-[0_0_35px_rgba(200,161,92,0.5)]"
+          >
+            <MessageCircle size={18} />
+            Quero atendimento 24/7
+          </a>
+        </motion.div>
+      </div>
     </section>
   );
 }
@@ -545,6 +768,160 @@ function LoadingVeil() {
 }
 
 /* ----------------------------------------------------------------------------
+   Robô de fundo (Whobee) — TESTE no lugar do globo. Cena Spline hospedada.
+   A logo é um overlay 2D aproximado sobre o bloco (a logo "colada" no 3D só
+   é possível editando a cena no Spline e republicando).
+-------------------------------------------------------------------------------*/
+const ROBOT_BG_URL = "https://prod.spline.design/PyzDhpQ9E5f1E3MT/scene.splinecode";
+
+// Tenta esconder a "plataforma"/chão da cena Spline em runtime (deixa só o robô
+// e o bloco). Como não controlamos os nomes dos objetos da cena hospedada,
+// procuramos por nomes comuns de piso/plataforma.
+function hideRobotFloor(spline) {
+  const words = ["floor", "plane", "ground", "base", "plataforma", "plataform", "stage", "podium", "rectangle", "piso", "chao", "chão"];
+  try {
+    let objs = [];
+    if (typeof spline.getAllObjects === "function") objs = spline.getAllObjects();
+    objs.forEach((o) => {
+      const n = (o?.name || "").toLowerCase();
+      if (words.some((w) => n.includes(w))) o.visible = false;
+    });
+    ["Floor", "Plane", "Ground", "Platform", "Plataforma", "Rectangle", "Piso"].forEach((nm) => {
+      const o = spline.findObjectByName?.(nm);
+      if (o) o.visible = false;
+    });
+  } catch (e) {
+    /* cena sem API de objetos — sem ação */
+  }
+}
+
+// Keyframes do movimento do robô dirigido pelo scroll (eco do que o globo fazia).
+// Como é um canvas Spline, animamos o container (pan/zoom/giro) por CSS.
+const ROBOT_KEYS = [
+  { x: 0, y: 0, s: 1.0, r: 0 }, // 0 hero
+  { x: -8, y: 2, s: 1.06, r: -2 }, // 1
+  { x: 7, y: -3, s: 1.12, r: 2 }, // 2
+  { x: 9, y: 4, s: 1.1, r: 3 }, // 3
+  { x: 0, y: 6, s: 1.18, r: 0 }, // 4 mergulho
+  { x: -6, y: 1, s: 1.22, r: -2 }, // 5 detalhe
+  { x: 0, y: 0, s: 1.0, r: 0 }, // 6 afasta
+];
+
+function lerpRobot(a, b, t) {
+  return {
+    x: THREE.MathUtils.lerp(a.x, b.x, t),
+    y: THREE.MathUtils.lerp(a.y, b.y, t),
+    s: THREE.MathUtils.lerp(a.s, b.s, t),
+    r: THREE.MathUtils.lerp(a.r, b.r, t),
+  };
+}
+
+function RobotBackground({ scrollRef }) {
+  const wrapperRef = useRef(null);
+  const els = useRef([]);
+
+  // Blocos de TEXTO (marcados com data-gaze) — é o que o robô vai acompanhar.
+  useEffect(() => {
+    els.current = Array.from(document.querySelectorAll("[data-gaze]"));
+  }, []);
+
+  // 1) Move o container do robô conforme o scroll (eco dos keyframes do globo).
+  // 2) Dirige o "olhar" do robô para o TEXTO: a cada frame despacha um evento de
+  //    ponteiro sintético no canvas, na posição do texto da seção ativa (lado +
+  //    altura). Como sobrescreve todo frame, o mouse real deixa de dominar, mas
+  //    a articulação natural da cena Spline é preservada.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const cur = { x: 0, y: 0, s: 1, r: 0 };
+    let raf;
+    let last = performance.now();
+    let canvas = null;
+    const loop = (now) => {
+      const delta = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      // --- movimento por scroll ---
+      const p = THREE.MathUtils.clamp(scrollRef?.current ?? 0, 0, 1);
+      const seg = p * (ROBOT_KEYS.length - 1);
+      const i = Math.min(Math.floor(seg), ROBOT_KEYS.length - 2);
+      const k = lerpRobot(ROBOT_KEYS[i], ROBOT_KEYS[i + 1], seg - i);
+      const damp = 1 - Math.exp(-4 * delta);
+      cur.x += (k.x - cur.x) * damp;
+      cur.y += (k.y - cur.y) * damp;
+      cur.s += (k.s - cur.s) * damp;
+      cur.r += (k.r - cur.r) * damp;
+      el.style.transform = `translate(${cur.x}vw, ${cur.y}vh) scale(${cur.s}) rotate(${cur.r}deg)`;
+
+      // --- olhar segue o texto: mira no centro real do bloco de texto mais
+      //     visível (X = lado, Y = altura) → olha p/ baixo quando surge embaixo
+      //     e acompanha subindo. A cena suaviza o movimento. ---
+      canvas = el.querySelector("canvas");
+      const list = document.querySelectorAll("[data-gaze]");
+      if (list.length) {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let cx = vw / 2;
+        let cy = vh / 2;
+        let bestDist = Infinity;
+        list.forEach((s) => {
+          const r = s.getBoundingClientRect();
+          if (r.width === 0 && r.height === 0) return;
+          const ccx = r.left + r.width / 2;
+          const ccy = r.top + r.height / 2;
+          const d = Math.abs(ccy - vh / 2);
+          if (d < bestDist) {
+            bestDist = d;
+            cx = ccx;
+            cy = ccy;
+          }
+        });
+        cx = Math.max(0, Math.min(vw, cx));
+        cy = Math.max(0, Math.min(vh, cy));
+        const base = { clientX: cx, clientY: cy, bubbles: true, cancelable: true };
+        const fire = (target) => {
+          if (!target) return;
+          target.dispatchEvent(new PointerEvent("pointermove", { ...base, pointerId: 1, pointerType: "mouse", isPrimary: true }));
+          target.dispatchEvent(new MouseEvent("mousemove", base));
+        };
+        fire(window);
+        fire(canvas);
+      }
+
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [scrollRef]);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {/* Glow roxo difuso (canto inferior direito). */}
+      <div className="pointer-events-none absolute left-[56%] top-[60%] h-[60vh] w-[60vh] rounded-full bg-[#7c3aed]/25 blur-[130px]" />
+
+      {/* Container animado pelo scroll. */}
+      <div ref={wrapperRef} className="h-full w-full will-change-transform [transform-origin:center]">
+        <Suspense
+          fallback={
+            <div className="flex h-full w-full items-center justify-center text-cream/40">
+              <RotateCw className="animate-spin" size={26} />
+            </div>
+          }
+        >
+          <SplineRobotScene scene={ROBOT_BG_URL} className="h-full w-full" onLoad={hideRobotFloor} />
+        </Suspense>
+
+        {/* Cobre o selo "Built with Spline" (acompanha o transform do robô). */}
+        <div className="pointer-events-none absolute bottom-0 right-0 z-[1] h-14 w-48 bg-void" />
+      </div>
+
+      {/* Sombra suave sob o bloco. */}
+      <div className="pointer-events-none absolute left-1/2 top-[83%] h-12 w-72 -translate-x-1/2 rounded-[100%] bg-black/70 blur-2xl" />
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------------
    APP
 -------------------------------------------------------------------------------*/
 export default function App() {
@@ -562,8 +939,10 @@ export default function App() {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const l = new Lenis({ duration: 1.2, smoothWheel: !reduce, lerp: 0.1 });
     lenis.current = l;
+    // Lenis dirige o scroll → mantém o ScrollTrigger (parallax) em sincronia.
     l.on("scroll", (e) => {
       scrollRef.current = e.progress ?? 0;
+      ScrollTrigger.update();
     });
     let raf;
     const loop = (t) => {
@@ -571,8 +950,11 @@ export default function App() {
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+    // Recalcula posições do ScrollTrigger após o layout assentar.
+    const refresh = setTimeout(() => ScrollTrigger.refresh(), 300);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(refresh);
       l.destroy();
     };
   }, []);
@@ -581,7 +963,7 @@ export default function App() {
     <div className="relative w-full bg-void">
       <LoadingVeil />
 
-      {/* CAMADA 3D — fixa no fundo */}
+      {/* CAMADA 3D — fixa no fundo (globo no R3F, câmera dirigida pelo scroll) */}
       <div className="fixed inset-0 z-0">
         <Canvas
           camera={{ position: [0, 1.6, 9.5], fov: 42 }}
@@ -604,7 +986,8 @@ export default function App() {
         {SECTIONS.slice(1).map((s, i) => (
           <Panel key={s.id} section={s} index={i} />
         ))}
-        <Outro />
+        <ParallaxOutro />
+        <AutomationSection />
       </div>
     </div>
   );

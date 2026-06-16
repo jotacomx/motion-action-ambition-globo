@@ -49,6 +49,67 @@ html.lenis body {
   }
 }
 
+/* ----------------------------------------------------------------------------
+   Parallax (Osmo) — seção final. .parallax é alto; .parallax__visuals fica
+   "grudado" (sticky) ocupando a tela enquanto as camadas se movem no scroll.
+-------------------------------------------------------------------------------*/
+.parallax {
+  position: relative;
+  height: 200vh;
+}
+.parallax__visuals {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: transparent; /* deixa o globo (canvas fixo) aparecer atrás */
+}
+.parallax__layers {
+  position: absolute;
+  inset: 0;
+}
+.parallax__layer-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 110%;
+  object-fit: cover;
+  will-change: transform;
+}
+.parallax__layer-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  z-index: 3;
+}
+.parallax__fade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 35vh;
+  background: linear-gradient(to top, #06040a, transparent);
+  pointer-events: none;
+  z-index: 4;
+}
+.parallax__black-line-overflow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #06040a;
+  z-index: 5;
+}
+
+/* Esconde o selo "Built with Spline" das cenas (link para spline.design). */
+a[href*="spline.design"] {
+  display: none !important;
+}
+
 /* Capitular decorativa estilo "morris initials" do original */
 .dropcap::first-letter {
   font-family: var(--font-display);
