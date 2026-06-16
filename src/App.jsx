@@ -23,37 +23,37 @@ const SECTIONS = [
     id: "quem-somos",
     kicker: "Quem Somos",
     title: "Parceiro de Crescimento",
-    body: "A Ambition une consultoria, marketing e implementação comercial para fazer negócios crescerem de forma estruturada e previsível. Mais do que gerar leads, construímos toda a jornada — da atração à conversão — transformando empresas que dependem do improviso em operações prontas para escalar.",
+    body: "A Ambition une consultoria, marketing e implementação comercial para fazer negócios crescerem de forma estruturada e previsível. Mais do que gerar leads, construímos toda a jornada — da atração à conversão — transformando empresas que dependem do improviso em operações prontas para escalar. Atuamos lado a lado com cada cliente, integrando estratégia, tecnologia e execução em um único processo, para que o crescimento deixe de ser sorte e passe a ser método.",
   },
   {
     id: "performance",
     kicker: "01 — Marketing de Performance",
     title: "Demanda Qualificada",
-    body: "Planejamento, execução e otimização contínua de campanhas em Meta e Google Ads. Estratégias de aquisição, remarketing e escala que geram não apenas alcance, mas demanda real e pronta para o seu time vender.",
+    body: "Planejamento, execução e otimização contínua de campanhas em Meta e Google Ads. Estratégias de aquisição, remarketing e escala que geram não apenas alcance, mas demanda real e pronta para o seu time vender. Acompanhamos cada métrica de perto — CPL, CPA, ROAS — ajustando criativos, públicos e orçamento em tempo real para que cada real investido volte em oportunidade qualificada.",
   },
   {
     id: "comercial",
     kicker: "02 — Estrutura Comercial",
     title: "Vendas sob Controle",
-    body: "Organizamos o processo comercial para aumentar a conversão e reduzir perdas ao longo do funil: CRM implementado, pipelines, scripts de atendimento, follow-up e indicadores claros. Cada oportunidade acompanhada do primeiro contato ao fechamento.",
+    body: "Organizamos o processo comercial para aumentar a conversão e reduzir perdas ao longo do funil: CRM implementado, pipelines, scripts de atendimento, follow-up e indicadores claros. Cada oportunidade acompanhada do primeiro contato ao fechamento. Treinamos o time, definimos cadências de contato e criamos painéis de gestão que mostram, em tempo real, onde estão os gargalos e quais ações destravam mais receita.",
   },
   {
     id: "ia-automacoes",
     kicker: "03 — Inteligência Artificial",
     title: "Automação e Agentes de IA",
-    body: "Agentes de IA no atendimento, automação de WhatsApp e fluxos com n8n integrando seus sistemas. Qualificação automática de leads e recuperação de oportunidades, em um atendimento híbrido entre inteligência artificial e equipe humana — menos operacional, mais produtividade.",
+    body: "Agentes de IA no atendimento, automação de WhatsApp e fluxos com n8n integrando seus sistemas. Qualificação automática de leads e recuperação de oportunidades, em um atendimento híbrido entre inteligência artificial e equipe humana — menos operacional, mais produtividade. Respostas em segundos a qualquer hora, agendamentos automáticos e disparos inteligentes que reativam contatos parados, liberando seu time para focar no que realmente exige toque humano: fechar negócios.",
   },
   {
     id: "conversao",
     kicker: "04 — Ativos de Conversão",
     title: "Páginas que Convertem",
-    body: "Landing pages de alta conversão, sites institucionais e páginas de pré-venda com copywriting estratégico e desenvolvimento orientado a performance. Estruturas digitais integradas ao CRM e às automações, feitas para transformar visitantes em clientes.",
+    body: "Landing pages de alta conversão, sites institucionais e páginas de pré-venda com copywriting estratégico e desenvolvimento orientado a performance. Estruturas digitais integradas ao CRM e às automações, feitas para transformar visitantes em clientes. Cada página é construída com base em dados e testes A/B, com carregamento rápido, design responsivo e uma jornada pensada para conduzir o visitante, passo a passo, até a ação que importa.",
   },
   {
     id: "consultoria",
     kicker: "05 — Consultoria Estratégica",
     title: "Mapa de Crescimento",
-    body: "Diagnóstico, planejamento, implementação e otimização contínua: analisamos o cenário atual e construímos um plano de crescimento claro e executável. Visão integrada entre marketing e vendas, orientada por dados, com a Ambition lado a lado como parceira estratégica.",
+    body: "Diagnóstico, planejamento, implementação e otimização contínua: analisamos o cenário atual e construímos um plano de crescimento claro e executável. Visão integrada entre marketing e vendas, orientada por dados, com a Ambition lado a lado como parceira estratégica. Definimos metas, prioridades e indicadores de acompanhamento, revisamos os resultados periodicamente e ajustamos a rota sempre que o mercado pedir — para que cada decisão seja sustentada por números, e não por achismo.",
   },
 ];
 
@@ -292,8 +292,18 @@ function Hero() {
     <section
       data-anchor
       id="hero"
-      className="relative flex h-screen flex-col items-center justify-center px-6 text-center"
+      className="relative flex h-screen flex-col items-center justify-end px-6 pb-[6vh] text-center"
     >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.3, 1, 0.3], y: [0, 8, 0] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-24 flex flex-col items-center gap-2 text-cream/60"
+      >
+        <span className="text-[10px] uppercase tracking-[0.3em]">Role para entrar</span>
+        <ArrowDown size={16} />
+      </motion.div>
+
       <motion.h1
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -301,30 +311,10 @@ function Hero() {
         transition={{ duration: 1.3, ease: EASE }}
         className="font-display leading-[0.82] text-cream"
       >
-        <span className="block text-[17vw] font-medium tracking-tight md:text-[13vw] lg:text-[10rem]">
+        <span className="block text-[22vw] font-medium tracking-tight md:text-[17vw] lg:text-[14rem]">
           AMBITION
         </span>
       </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ amount: 0.6 }}
-        transition={{ duration: 1, ease: EASE, delay: 0.2 }}
-        className="mt-4 font-display text-lg italic text-cream/80 md:text-2xl"
-      >
-        Gestão de Performance
-      </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.3, 1, 0.3], y: [0, 8, 0] }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-10 flex flex-col items-center gap-2 text-cream/60"
-      >
-        <span className="text-[10px] uppercase tracking-[0.3em]">Scroll to enter</span>
-        <ArrowDown size={16} />
-      </motion.div>
     </section>
   );
 }
@@ -350,7 +340,8 @@ function Panel({ section, index }) {
       >
         {/* Barra vertical com marcador — surge "desenhando" junto com o texto.
             A linha escala em scaleY (origin-top); o triângulo é irmão para
-            não ser esticado pela animação. Espelha de lado conforme o alinhamento. */}
+            não ser esticado pela animação. Espelha de lado: barra à esquerda nos
+            painéis da esquerda, à direita nos painéis da direita. */}
         <div className="relative w-px shrink-0 self-stretch">
           <motion.div
             variants={{ hidden: { scaleY: 0 }, show: { scaleY: 1 } }}
@@ -368,10 +359,12 @@ function Panel({ section, index }) {
           />
         </div>
 
-        {/* Texto */}
+        {/* Texto — largura fixa (max-w-xl, w-full) para que kicker, título e
+            parágrafo encostem sempre na barra, independente do tamanho do título. */}
         <motion.div
           variants={{ hidden: { opacity: 0, y: 50 }, show: { opacity: 1, y: 0 } }}
           transition={{ duration: 1.1, ease: EASE }}
+          className="w-full max-w-xl"
         >
           <span className="mb-4 block font-sans text-xs uppercase tracking-[0.35em] text-ember">
             {section.kicker}
@@ -379,7 +372,7 @@ function Panel({ section, index }) {
           <h2 className="mb-5 font-display text-5xl font-medium leading-[0.95] text-cream md:text-7xl">
             {section.title}
           </h2>
-          <p className="max-w-xl font-sans text-base leading-relaxed text-cream/75 md:text-lg">
+          <p className="font-sans text-base leading-relaxed text-cream/75 md:text-lg">
             {section.body}
           </p>
         </motion.div>
@@ -465,7 +458,7 @@ function Navbar({ lenis }) {
     >
       <button
         onClick={() => go("hero")}
-        className="font-display text-lg tracking-[0.25em] text-cream"
+        className="font-display text-2xl tracking-[0.25em] text-cream md:text-3xl"
       >
         AMBITION
       </button>
